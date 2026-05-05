@@ -1,0 +1,28 @@
+driver-management-system/
+│── backend/
+│   ├── server.js          # Express entry point
+│   ├── routes/
+│   │   ├── drivers.js     # CRUD for drivers
+│   │   ├── vehicles.js    # CRUD for vehicles
+│   │   └── trips.js       # Assignments & logs
+│   ├── models/
+│   │   ├── Driver.js
+│   │   ├── Vehicle.js
+│   │   └── Trip.js
+│   └── middleware/
+│       └── auth.js        # JWT verification
+│
+│── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── DriverForm.jsx
+│   │   │   ├── VehicleForm.jsx
+│   │   │   └── TripForm.jsx
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   └── Reports.jsx
+│   │   └── App.jsx
+│   └── public/
+│       └── index.html
+│
+└── package.json
