@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FleetHQ — Driver Management</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f7f6f3;
+      --bg-tertiary: #f0ede8;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b6a65;
+      --border: rgba(0,0,0,0.1);
+      --border-md: rgba(0,0,0,0.15);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+
+      /* amber brand */
+      --amber-50: #FAEEDA;
+      --amber-100: #FAC775;
+      --amber-400: #BA7517;
+      --amber-600: #854F0B;
+      --amber-800: #633806;
+
+      /* status */
+      --green-50: #EAF3DE; --green-800: #27500A; --green-600: #3B6D11;
+      --amber-status-50: #FAEEDA; --amber-status-800: #633806;
+      --red-50: #FCEBEB; --red-800: #791F1F;
+      --blue-50: #E6F1FB; --blue-800: #0C447C;
+
+      /* avatars */
+      --av-a-bg: #FAEEDA; --av-a-txt: #633806;
+      --av-t-bg: #E1F5EE; --av-t-txt: #085041;
+      --av-b-bg: #E6F1FB; --av-b-txt: #0C447C;
+      --av-p-bg: #EEEDFE; --av-p-txt: #3C3489;
+      --av-g-bg: #EAF3DE; --av-g-txt: #27500A;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── TOP NAV ── */
+    .topnav {
+      background: var(--bg-primary);
+      border-bottom: 0.5px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      padding: 14px 20px 14px 0;
+      border-right: 0.5px solid var(--border);
+      margin-right: 8px;
+      white-space: nowrap;
+      letter-spacing: -0.02em;
+    }
+
+    .logo span { color: var(--amber-400); }
+
+    .nav-item {
+      padding: 15px 14px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .nav-item:hover { color: var(--text-primary); }
+
+    .nav-item.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--amber-400);
+      font-weight: 500;
+    }
+
+    .nav-right {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      cursor: pointer;
+      border: 0.5px solid var(--border-md);
+      background: transparent;
+      color: var(--text-primary);
+      transition: background 0.15s;
+    }
+
+    .btn:hover { background: var(--bg-secondary); }
+
+    .btn-primary {
+      background: var(--amber-400);
+      border-color: var(--amber-600);
+      color: white;
+      font-weight: 500;
+    }
+
+    .btn-primary:hover { background: var(--amber-600); }
+
+    /* ── BODY ── */
+    .body { padding: 20px 24px; max-width: 1280px; margin: 0 auto; }
+
+    /* ── SECTIONS ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── METRIC CARDS ── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .metric {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-val {
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .metric-trend { font-size: 11px; margin-top: 6px; }
+    .trend-up { color: var(--green-600); }
+    .trend-dn { color: #A32D2D; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+    }
+
+    .card-hd {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* ── GRID LAYOUTS ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    /* ── BADGES ── */
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .badge-green  { background: var(--green-50);        color: var(--green-800); }
+    .badge-amber  { background: var(--amber-status-50); color: var(--amber-status-800); }
+    .badge-red    { background: var(--red-50);          color: var(--red-800); }
+    .badge-blue   { background: var(--blue-50);         color: var(--blue-800); }
+
+    /* ── AVATARS ── */
+    .av {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .av-a { background: var(--av-a-bg); color: var(--av-a-txt); }
+    .av-t { background: var(--av-t-bg); color: var(--av-t-txt); }
+    .av-b { background: var(--av-b-bg); color: var(--av-b-txt); }
+    .av-p { background: var(--av-p-bg); color: var(--av-p-txt); }
+    .av-g { background: var(--av-g-bg); color: var(--av-g-txt); }
+
+    /* ── ROWS ── */
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .row:last-child { border-bottom: none; }
+
+    .row-info { flex: 1; min-width: 0; }
+
+    .row-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+
+    /* ── STATUS DOTS ── */
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-green  { background: #639922; }
+    .dot-amber  { background: var(--amber-400); }
+    .dot-blue   { background: #378ADD; }
+    .dot-gray   { background: #888780; }
+
+    /* ── STARS ── */
+    .stars { color: var(--amber-400); font-size: 11px; }
+
+    /* ── PROGRESS BARS ── */
+    .pay-bar {
+      flex: 1;
+      height: 4px;
+      border-radius: 4px;
+      background: var(--border);
+      overflow: hidden;
+    }
+
+    .pay-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--amber-400);
+    }
+
+    /* ── ACTION BUTTON (small) ── */
+    .action-btn {
+      padding: 4px 10px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-md);
+      background: transparent;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .main-grid   { grid-template-columns: 1fr; }
+      .bottom-grid { grid-template-columns: 1fr; }
+      .metrics     { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 600px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .topnav  { padding: 0 12px; overflow-x: auto; }
+      .body    { padding: 12px; }
+      .logo    { font-size: 13px; padding-right: 12px; margin-right: 4px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── TOP NAV ── -->
+  <nav class="topnav">
+    <div class="logo">Fleet<span>HQ</span></div>
+
+    <div class="nav-item active" onclick="show('dashboard', this)">Overview</div>
+    <div class="nav-item" onclick="show('drivers', this)">Drivers</div>
+    <div class="nav-item" onclick="show('trips', this)">Trips</div>
+    <div class="nav-item" onclick="show('schedule', this)">Schedule</div>
+    <div class="nav-item" onclick="show('payments', this)">Payments</div>
+    <div class="nav-item" onclick="show('partners', this)">Partners</div>
+
+    <div class="nav-right">
+      <button class="btn">Help</button>
+      <button class="btn btn-primary" id="action-btn" onclick="handleAction()">+ Add driver</button>
+    </div>
+  </nav>
+
+  <!-- ── BODY ── -->
+  <div class="body">
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Active drivers</div>
+          <div class="metric-val">3</div>
+          <div class="metric-trend trend-up">↑ 1 from last week</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Trips today</div>
+          <div class="metric-val">47</div>
+          <div class="metric-trend trend-up">↑ 12% vs yesterday</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Revenue today</div>
+          <div class="metric-val">R4,820</div>
+          <div class="metric-trend trend-up">↑ 8% vs yesterday</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Avg rating</div>
+          <div class="metric-val">4.7</div>
+          <div class="metric-trend" style="color:var(--text-secondary)">across 5 drivers</div>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <!-- Recent trips -->
+        <div class="card">
+          <div class="card-hd">Recent trips <span class="badge badge-blue">5 today</span></div>
+          <div class="row">
+            <div class="dot dot-green"></div>
+            <div class="row-info"><div class="row-name">FoodCo — 14 Rivonia Rd, Sandton</div><div class="row-sub">Thabo Nkosi · 2 min ago</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:500">R85</div><span class="badge badge-green">delivered</span></div>
+          </div>
+          <div class="row">
+            <div class="dot dot-blue"></div>
+            <div class="row-info"><div class="row-name">QuickSend — Killarney Mall</div><div class="row-sub">Priya Govender · 12 min ago</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:500">R120</div><span class="badge badge-blue">in transit</span></div>
+          </div>
+          <div class="row">
+            <div class="dot dot-green"></div>
+            <div class="row-info"><div class="row-name">FoodCo — Sandton City</div><div class="row-sub">Thabo Nkosi · 34 min ago</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:500">R95</div><span class="badge badge-green">delivered</span></div>
+          </div>
+          <div class="row">
+            <div class="dot dot-amber"></div>
+            <div class="row-info"><div class="row-name">RushBox — Midrand Hub</div><div class="row-sub">Amara Osei · just now</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:500">R210</div><span class="badge badge-amber">assigned</span></div>
+          </div>
+          <div class="row">
+            <div class="dot dot-green"></div>
+            <div class="row-info"><div class="row-name">FoodCo — Morningside</div><div class="row-sub">Thabo Nkosi · 1h ago</div></div>
+            <div style="text-align:right"><div style="font-size:13px;font-weight:500">R75</div><span class="badge badge-green">delivered</span></div>
+          </div>
+        </div>
+
+        <!-- Active drivers -->
+        <div class="card">
+          <div class="card-hd">Active drivers <span class="badge badge-green">3 online</span></div>
+          <div class="row"><div class="av av-a">TN</div><div class="row-info"><div class="row-name">Thabo Nkosi</div><div class="row-sub">Sandton · FoodCo</div></div><span class="stars">★ 4.9</span></div>
+          <div class="row"><div class="av av-t">PG</div><div class="row-info"><div class="row-name">Priya Govender</div><div class="row-sub">Randburg · QuickSend</div></div><span class="stars">★ 4.8</span></div>
+          <div class="row"><div class="av av-p">AO</div><div class="row-info"><div class="row-name">Amara Osei</div><div class="row-sub">Midrand · RushBox</div></div><span class="stars">★ 4.6</span></div>
+          <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)">
+            <div class="row" style="padding:5px 0"><div class="av av-b" style="opacity:0.45">SD</div><div class="row-info"><div class="row-name" style="color:var(--text-secondary)">Sipho Dlamini</div><div class="row-sub">On leave</div></div><span class="badge badge-amber">leave</span></div>
+            <div class="row" style="padding:5px 0;border-bottom:none"><div class="av av-g" style="opacity:0.45">LM</div><div class="row-info"><div class="row-name" style="color:var(--text-secondary)">Leilani Mokoena</div><div class="row-sub">Inactive</div></div><span class="badge badge-red">inactive</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-grid">
+        <!-- Schedule -->
+        <div class="card">
+          <div class="card-hd">Today's schedule</div>
+          <div class="row"><div class="dot dot-green"></div><span style="color:var(--text-secondary);min-width:95px;font-size:12px">06:00–14:00</span><span>Thabo Nkosi</span></div>
+          <div class="row"><div class="dot dot-green"></div><span style="color:var(--text-secondary);min-width:95px;font-size:12px">10:00–18:00</span><span>Priya Govender</span></div>
+          <div class="row"><div class="dot dot-green"></div><span style="color:var(--text-secondary);min-width:95px;font-size:12px">14:00–22:00</span><span>Amara Osei</span></div>
+          <div class="row"><div class="dot dot-amber"></div><span style="color:var(--text-secondary);min-width:95px;font-size:12px">—</span><span style="color:var(--text-secondary)">Sipho Dlamini</span></div>
+        </div>
+
+        <!-- Partners -->
+        <div class="card">
+          <div class="card-hd">Partners</div>
+          <div class="row"><div class="av av-a" style="border-radius:var(--radius-md)">FC</div><div class="row-info"><div class="row-name">FoodCo</div><div class="row-sub">2 drivers · 12% comm.</div></div><div style="font-size:13px;font-weight:500">R48,200</div></div>
+          <div class="row"><div class="av av-t" style="border-radius:var(--radius-md)">QS</div><div class="row-info"><div class="row-name">QuickSend</div><div class="row-sub">2 drivers · 10% comm.</div></div><div style="font-size:13px;font-weight:500">R33,400</div></div>
+          <div class="row"><div class="av av-b" style="border-radius:var(--radius-md)">RB</div><div class="row-info"><div class="row-name">RushBox</div><div class="row-sub">1 driver · 15% comm.</div></div><div style="font-size:13px;font-weight:500">R21,200</div></div>
+        </div>
+
+        <!-- Payouts -->
+        <div class="card">
+          <div class="card-hd">Payouts this week</div>
+          <div class="row"><div class="av av-a" style="width:24px;height:24px;font-size:10px">TN</div><div style="flex:1;min-width:0;margin:0 10px"><div style="font-size:12px;color:var(--text-primary)">Thabo Nkosi</div><div class="pay-bar"><div class="pay-fill" style="width:100%"></div></div></div><div style="font-size:12px;font-weight:500;min-width:52px;text-align:right">R8,100</div></div>
+          <div class="row"><div class="av av-t" style="width:24px;height:24px;font-size:10px">PG</div><div style="flex:1;min-width:0;margin:0 10px"><div style="font-size:12px;color:var(--text-primary)">Priya Govender</div><div class="pay-bar"><div class="pay-fill" style="width:74%"></div></div></div><div style="font-size:12px;font-weight:500;min-width:52px;text-align:right">R6,025</div></div>
+          <div class="row"><div class="av av-p" style="width:24px;height:24px;font-size:10px">AO</div><div style="flex:1;min-width:0;margin:0 10px"><div style="font-size:12px;color:var(--text-primary)">Amara Osei</div><div class="pay-bar"><div class="pay-fill" style="width:65%"></div></div></div><div style="font-size:12px;font-weight:500;min-width:52px;text-align:right">R5,300</div></div>
+          <div class="row"><div class="av av-b" style="width:24px;height:24px;font-size:10px">SD</div><div style="flex:1;min-width:0;margin:0 10px"><div style="font-size:12px;color:var(--text-secondary)">Sipho Dlamini</div><div class="pay-bar"><div class="pay-fill" style="width:0%"></div></div></div><div style="font-size:12px;font-weight:500;color:var(--text-secondary);min-width:52px;text-align:right">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRIVERS -->
+    <div class="section" id="sec-drivers">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Total drivers</div><div class="metric-val">5</div></div>
+        <div class="metric"><div class="metric-label">Active</div><div class="metric-val">3</div><div class="metric-trend trend-up">60% utilisation</div></div>
+        <div class="metric"><div class="metric-label">Docs expiring</div><div class="metric-val">1</div><div class="metric-trend trend-dn">Sipho Dlamini</div></div>
+        <div class="metric"><div class="metric-label">Avg rating</div><div class="metric-val">4.7</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">All drivers</div>
+        <div class="row">
+          <div class="av av-a">TN</div>
+          <div class="row-info"><div class="row-name">Thabo Nkosi</div><div class="row-sub">Sandton · FoodCo · 06:00–14:00</div></div>
+          <div style="text-align:right;margin-right:12px"><div style="font-size:13px;font-weight:500">R32,400</div><div class="row-sub">847 trips</div></div>
+          <span class="stars" style="margin-right:12px">★ 4.9</span>
+          <span class="badge badge-green">active</span>
+          <button class="action-btn" style="margin-left:10px">View</button>
+        </div>
+        <div class="row">
+          <div class="av av-t">PG</div>
+          <div class="row-info"><div class="row-name">Priya Govender</div><div class="row-sub">Randburg · QuickSend · 10:00–18:00</div></div>
+          <div style="text-align:right;margin-right:12px"><div style="font-size:13px;font-weight:500">R24,100</div><div class="row-sub">612 trips</div></div>
+          <span class="stars" style="margin-right:12px">★ 4.8</span>
+          <span class="badge badge-green">active</span>
+          <button class="action-btn" style="margin-left:10px">View</button>
+        </div>
+        <div class="row">
+          <div class="av av-b">SD</div>
+          <div class="row-info"><div class="row-name">Sipho Dlamini</div><div class="row-sub">Soweto · FoodCo · on leave</div></div>
+          <div style="text-align:right;margin-right:12px"><div style="font-size:13px;font-weight:500">R15,600</div><div class="row-sub">391 trips</div></div>
+          <span class="stars" style="margin-right:12px">★ 4.7</span>
+          <span class="badge badge-amber">on leave</span>
+          <button class="action-btn" style="margin-left:10px">View</button>
+        </div>
+        <div class="row">
+          <div class="av av-p">AO</div>
+          <div class="row-info"><div class="row-name">Amara Osei</div><div class="row-sub">Midrand · RushBox · 14:00–22:00</div></div>
+          <div style="text-align:right;margin-right:12px"><div style="font-size:13px;font-weight:500">R21,200</div><div class="row-sub">529 trips</div></div>
+          <span class="stars" style="margin-right:12px">★ 4.6</span>
+          <span class="badge badge-green">active</span>
+          <button class="action-btn" style="margin-left:10px">View</button>
+        </div>
+        <div class="row">
+          <div class="av av-g">LM</div>
+          <div class="row-info"><div class="row-name">Leilani Mokoena</div><div class="row-sub">Centurion · QuickSend · inactive</div></div>
+          <div style="text-align:right;margin-right:12px"><div style="font-size:13px;font-weight:500">R8,300</div><div class="row-sub">204 trips</div></div>
+          <span class="stars" style="margin-right:12px">★ 4.5</span>
+          <span class="badge badge-red">inactive</span>
+          <button class="action-btn" style="margin-left:10px">View</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIPS -->
+    <div class="section" id="sec-trips">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Trips today</div><div class="metric-val">47</div><div class="metric-trend trend-up">↑ 12%</div></div>
+        <div class="metric"><div class="metric-label">Delivered</div><div class="metric-val">38</div><div class="metric-trend trend-up">81% completion</div></div>
+        <div class="metric"><div class="metric-label">In transit</div><div class="metric-val">6</div></div>
+        <div class="metric"><div class="metric-label">Revenue</div><div class="metric-val">R4,820</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Today's trips</div>
+        <div class="row"><div class="dot dot-green"></div><div class="row-info"><div class="row-name">FoodCo — 14 Rivonia Rd, Sandton</div><div class="row-sub">Thabo Nkosi · 2 min ago</div></div><div style="font-size:13px;font-weight:500;margin-right:10px">R85</div><span class="badge badge-green">delivered</span></div>
+        <div class="row"><div class="dot dot-blue"></div><div class="row-info"><div class="row-name">QuickSend — Killarney Mall, Randburg</div><div class="row-sub">Priya Govender · 12 min ago</div></div><div style="font-size:13px;font-weight:500;margin-right:10px">R120</div><span class="badge badge-blue">in transit</span></div>
+        <div class="row"><div class="dot dot-green"></div><div class="row-info"><div class="row-name">FoodCo — Sandton City</div><div class="row-sub">Thabo Nkosi · 34 min ago</div></div><div style="font-size:13px;font-weight:500;margin-right:10px">R95</div><span class="badge badge-green">delivered</span></div>
+        <div class="row"><div class="dot dot-amber"></div><div class="row-info"><div class="row-name">RushBox — Midrand Hub</div><div class="row-sub">Amara Osei · just now</div></div><div style="font-size:13px;font-weight:500;margin-right:10px">R210</div><span class="badge badge-amber">assigned</span></div>
+        <div class="row"><div class="dot dot-green"></div><div class="row-info"><div class="row-name">FoodCo — Morningside</div><div class="row-sub">Thabo Nkosi · 1h ago</div></div><div style="font-size:13px;font-weight:500;margin-right:10px">R75</div><span class="badge badge-green">delivered</span></div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="section" id="sec-schedule">
+      <div class="card">
+        <div class="card-hd">Today — Tuesday 6 May</div>
+        <div class="row"><div class="dot dot-green"></div><span style="color:var(--text-secondary);min-width:110px;font-size:12px">06:00–14:00</span><div class="av av-a" style="width:24px;height:24px;font-size:10px">TN</div><span style="flex:1;margin-left:8px">Thabo Nkosi</span><span style="color:var(--text-secondary);font-size:12px">Sandton</span><span class="badge badge-green" style="margin-left:10px">active</span></div>
+        <div class="row"><div class="dot dot-green"></div><span style="color:var(--text-secondary);min-width:110px;font-size:12px">10:00–18:00</span><div class="av av-t" style="width:24px;height:24px;font-size:10px">PG</div><span style="flex:1;margin-left:8px">Priya Govender</span><span style="color:var(--text-secondary);font-size:12px">Randburg</span><span class="badge badge-green" style="margin-left:10px">active</span></div>
+        <div class="row"><div class="dot dot-green"></div><span style="color:var(--text-secondary);min-width:110px;font-size:12px">14:00–22:00</span><div class="av av-p" style="width:24px;height:24px;font-size:10px">AO</div><span style="flex:1;margin-left:8px">Amara Osei</span><span style="color:var(--text-secondary);font-size:12px">Midrand</span><span class="badge badge-green" style="margin-left:10px">active</span></div>
+        <div class="row"><div class="dot dot-amber"></div><span style="color:var(--text-secondary);min-width:110px;font-size:12px">—</span><div class="av av-b" style="width:24px;height:24px;font-size:10px;opacity:0.45">SD</div><span style="flex:1;margin-left:8px;color:var(--text-secondary)">Sipho Dlamini</span><span style="color:var(--text-secondary);font-size:12px">Soweto</span><span class="badge badge-amber" style="margin-left:10px">on leave</span></div>
+        <div class="row"><div class="dot dot-gray"></div><span style="color:var(--text-secondary);min-width:110px;font-size:12px">—</span><div class="av av-g" style="width:24px;height:24px;font-size:10px;opacity:0.45">LM</div><span style="flex:1;margin-left:8px;color:var(--text-secondary)">Leilani Mokoena</span><span style="color:var(--text-secondary);font-size:12px">Centurion</span><span class="badge badge-red" style="margin-left:10px">inactive</span></div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="section" id="sec-payments">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">This week</div><div class="metric-val">R18,540</div><div class="metric-trend trend-up">↑ 6% vs last week</div></div>
+        <div class="metric"><div class="metric-label">Pending</div><div class="metric-val">R6,200</div></div>
+        <div class="metric"><div class="metric-label">This month</div><div class="metric-val">R72,300</div></div>
+        <div class="metric"><div class="metric-label">Avg per driver</div><div class="metric-val">R20,300</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Driver payouts <button class="action-btn">Export</button></div>
+        <div class="row"><div class="av av-a" style="width:28px;height:28px;font-size:11px">TN</div><div style="flex:1;min-width:0;margin:0 12px"><div style="font-size:13px;font-weight:500">Thabo Nkosi</div><div class="pay-bar"><div class="pay-fill" style="width:100%"></div></div></div><div style="font-size:13px;font-weight:500;min-width:60px;text-align:right">R32,400</div><span class="badge badge-amber" style="margin-left:10px">pending</span></div>
+        <div class="row"><div class="av av-t" style="width:28px;height:28px;font-size:11px">PG</div><div style="flex:1;min-width:0;margin:0 12px"><div style="font-size:13px;font-weight:500">Priya Govender</div><div class="pay-bar"><div class="pay-fill" style="width:74%"></div></div></div><div style="font-size:13px;font-weight:500;min-width:60px;text-align:right">R24,100</div><span class="badge badge-amber" style="margin-left:10px">pending</span></div>
+        <div class="row"><div class="av av-p" style="width:28px;height:28px;font-size:11px">AO</div><div style="flex:1;min-width:0;margin:0 12px"><div style="font-size:13px;font-weight:500">Amara Osei</div><div class="pay-bar"><div class="pay-fill" style="width:65%"></div></div></div><div style="font-size:13px;font-weight:500;min-width:60px;text-align:right">R21,200</div><span class="badge badge-amber" style="margin-left:10px">pending</span></div>
+        <div class="row"><div class="av av-b" style="width:28px;height:28px;font-size:11px">SD</div><div style="flex:1;min-width:0;margin:0 12px"><div style="font-size:13px;color:var(--text-secondary)">Sipho Dlamini</div><div class="pay-bar"><div class="pay-fill" style="width:48%"></div></div></div><div style="font-size:13px;font-weight:500;color:var(--text-secondary);min-width:60px;text-align:right">R15,600</div><span class="badge badge-red" style="margin-left:10px">on leave</span></div>
+        <div class="row"><div class="av av-g" style="width:28px;height:28px;font-size:11px">LM</div><div style="flex:1;min-width:0;margin:0 12px"><div style="font-size:13px;color:var(--text-secondary)">Leilani Mokoena</div><div class="pay-bar"><div class="pay-fill" style="width:26%"></div></div></div><div style="font-size:13px;font-weight:500;color:var(--text-secondary);min-width:60px;text-align:right">R8,300</div><span class="badge badge-red" style="margin-left:10px">inactive</span></div>
+      </div>
+    </div>
+
+    <!-- PARTNERS -->
+    <div class="section" id="sec-partners">
+      <div class="bottom-grid">
+        <div class="card">
+          <div class="card-hd">FoodCo <span class="badge badge-green">active</span></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Drivers</div><div style="font-size:13px;font-weight:500">2</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Trips</div><div style="font-size:13px;font-weight:500">1,238</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Revenue</div><div style="font-size:13px;font-weight:500">R48,200</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Commission</div><div style="font-size:13px;font-weight:500">12%</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">QuickSend <span class="badge badge-green">active</span></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Drivers</div><div style="font-size:13px;font-weight:500">2</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Trips</div><div style="font-size:13px;font-weight:500">816</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Revenue</div><div style="font-size:13px;font-weight:500">R33,400</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Commission</div><div style="font-size:13px;font-weight:500">10%</div></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">RushBox <span class="badge badge-green">active</span></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Drivers</div><div style="font-size:13px;font-weight:500">1</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Trips</div><div style="font-size:13px;font-weight:500">529</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Revenue</div><div style="font-size:13px;font-weight:500">R21,200</div></div>
+          <div class="row"><div style="font-size:12px;color:var(--text-secondary);min-width:90px">Commission</div><div style="font-size:13px;font-weight:500">15%</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <script>
+    const sections = {
+      dashboard: { btn: '+ Add driver',   action: 'add a new driver' },
+      drivers:   { btn: '+ Add driver',   action: 'add a new driver' },
+      trips:     { btn: '+ Log trip',     action: 'log a new trip' },
+      schedule:  { btn: '+ Add shift',    action: 'add a new shift' },
+      payments:  { btn: 'Export report',  action: 'export a payment report' },
+      partners:  { btn: '+ Add partner',  action: 'add a new delivery partner' },
+    };
+
+    let current = 'dashboard';
+
+    function show(name, el) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      el.classList.add('active');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('sec-' + name).classList.add('active');
+      document.getElementById('action-btn').textContent = sections[name].btn;
+      current = name;
+    }
+
+    function handleAction() {
+      alert('Action: ' + sections[current].action);
+      // Replace with your own routing / modal logic
+    }
+  </script>
+</body>
+</html>
